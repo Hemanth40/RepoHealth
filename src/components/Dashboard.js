@@ -1,100 +1,183 @@
-import React from 'react';
 import Heatmap from './Heatmap';
 import IssueList from './IssueList';
 
+const CATEGORY_LABELS = {
+  maintainability: 'Maintainability',
+  reliability: 'Reliability',
+  security: 'Security',
+  documentation: 'Documentation',
+  architecture: 'Architecture',
+};
+
 export default function Dashboard({ data }) {
-    if (!data) return null;
+  if (!data) return null;
 
-    const { overallScore, summary, heatmap, topIssues, priorityFixes, quickWins } = data;
+  const project = data.project || {};
+  const risk = data.risk || {};
+  const categories = data.categories || {};
+  const analysisMeta = data.analysisMeta || {};
+  const categoryEntries = Object.entries(CATEGORY_LABELS).map(([key, label]) => ({
+    key,
+    label,
+    score: Number.isFinite(categories[key]) ? categories[key] : 0,
+  }));
 
-    const getScoreColor = (score) => {
-        if (score >= 80) return 'score-high';
-        if (score >= 60) return 'score-med';
-        return 'score-low';
-    };
-
-    return (
-        <div className="container animate-fade-in" style={{ paddingBottom: '4rem' }}>
-            {/* Header Section */}
-            <div className="glass-panel" style={{ padding: '3rem', textAlign: 'center', marginBottom: '3rem', position: 'relative', overflow: 'hidden' }}>
-                <div style={{ position: 'absolute', top: '-50%', left: '-50%', width: '200%', height: '200%', background: 'radial-gradient(circle, rgba(59,130,246,0.1) 0%, transparent 70%)', pointerEvents: 'none' }}></div>
-
-                <h1 style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>Health Report</h1>
-                <div className="score-card animate-float">
-                    <div className={`score-circle ${getScoreColor(overallScore)}`} style={{
-                        borderColor: overallScore >= 80 ? 'var(--success)' : overallScore >= 60 ? 'var(--warning)' : 'var(--danger)',
-                        color: overallScore >= 80 ? 'var(--success)' : overallScore >= 60 ? 'var(--warning)' : 'var(--danger)',
-                        boxShadow: `0 0 30px ${overallScore >= 80 ? 'rgba(34, 197, 94, 0.3)' : overallScore >= 60 ? 'rgba(234, 179, 8, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`
-                    }}>
-                        {overallScore}
-                    </div>
-                </div>
-                <p style={{ fontSize: '1.2rem', maxWidth: '700px', margin: '0 auto', opacity: 0.9, lineHeight: 1.6 }}>{summary}</p>
-            </div>
-
-            {/* Grid Layout */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '2rem', marginBottom: '2rem' }}>
-                <div className="glass-panel" style={{ padding: '2rem' }}>
-                    <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <span style={{ color: 'var(--accent)' }}>◈</span> Complexity Heatmap
-                    </h2>
-                    <Heatmap data={heatmap} />
-                </div>
-                <div className="glass-panel" style={{ padding: '2rem' }}>
-                    <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <span style={{ color: 'var(--danger)' }}>⚠</span> Top Issues
-                    </h2>
-                    <IssueList issues={topIssues} />
-                </div>
-            </div>
-
-            {/* Fixes & Quick Wins */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '2rem' }}>
-                <div className="glass-panel" style={{ padding: '2rem' }}>
-                    <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <span style={{ color: 'var(--warning)' }}>⚡</span> Priority Fixes
-                    </h2>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                        {priorityFixes && priorityFixes.map((fix, i) => (
-                            <div key={i} className="glass-panel" style={{ padding: '1rem', background: 'rgba(255,255,255,0.03)', border: 'none' }}>
-                                <h3 style={{ color: 'var(--foreground)', fontSize: '1.1rem', marginBottom: '0.5rem' }}>{fix.suggestion}</h3>
-                                <div style={{ display: 'flex', gap: '1rem', fontSize: '0.85rem' }}>
-                                    <span style={{ opacity: 0.7 }}>{fix.file}</span>
-                                    <span className={`badge badge-${fix.impact}`}>{fix.impact} Impact</span>
-                                    <span className={`badge badge-${fix.effort}`}>{fix.effort} Effort</span>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
-                <div className="glass-panel" style={{ padding: '2rem' }}>
-                    <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <span style={{ color: 'var(--success)' }}>✨</span> Quick Wins
-                    </h2>
-                    <ul style={{ listStyle: 'none' }}>
-                        {quickWins && quickWins.map((win, i) => (
-                            <li key={i} style={{
-                                padding: '1rem',
-                                borderBottom: '1px solid rgba(255,255,255,0.05)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '1rem',
-                                fontSize: '1.05rem'
-                            }}>
-                                <div style={{
-                                    minWidth: '24px', height: '24px',
-                                    background: 'rgba(34, 197, 94, 0.2)',
-                                    borderRadius: '50%',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    color: 'var(--success)'
-                                }}>✓</div>
-                                {win}
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            </div>
+  return (
+    <div className="container dashboard-wrap">
+      <section className="panel report-hero">
+        <div className="report-main">
+          <p className="eyebrow">Repository Report v{data.reportVersion || '2.0'}</p>
+          <h2>{project.fullName || 'Repository'}</h2>
+          <p className="muted">
+            {project.description || 'No repository description provided.'}
+          </p>
+          <div className="project-meta">
+            <span>Language: {project.primaryLanguage || 'Unknown'}</span>
+            <span>Stars: {project.stars ?? 0}</span>
+            <span>Forks: {project.forks ?? 0}</span>
+            <span>Open issues: {project.openIssues ?? 0}</span>
+          </div>
         </div>
-    );
+        <div className="score-badge-wrap">
+          <div className={`score-badge ${scoreTone(data.overallScore)}`}>
+            <p>Health Score</p>
+            <strong>{data.overallScore ?? 0}</strong>
+            <span>Grade {data.grade || 'N/A'}</span>
+          </div>
+          <div className="confidence-box">
+            <p>Confidence</p>
+            <strong>{data.confidence ?? 0}%</strong>
+          </div>
+        </div>
+      </section>
+
+      <section className="panel">
+        <h2>Executive Summary</h2>
+        <p className="muted">{data.summary}</p>
+      </section>
+
+      <div className="meta-grid">
+        <section className="panel">
+          <h2>Category Scores</h2>
+          <div className="category-list">
+            {categoryEntries.map((entry) => (
+              <div key={entry.key} className="category-row">
+                <div className="category-label-row">
+                  <span>{entry.label}</span>
+                  <strong>{entry.score}</strong>
+                </div>
+                <div className="category-track">
+                  <div
+                    className={`category-fill ${scoreTone(entry.score)}`}
+                    style={{ width: `${entry.score}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="panel">
+          <h2>Risk Posture</h2>
+          <div className={`risk-pill risk-${(risk.level || 'Moderate').toLowerCase()}`}>
+            {risk.level || 'Moderate'} Risk
+          </div>
+          <p className="muted">Risk score: {risk.score ?? 0}/100</p>
+          <ul className="simple-list">
+            {(risk.dominantRisks || []).map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </section>
+
+        <section className="panel">
+          <h2>Analysis Runtime</h2>
+          <ul className="simple-list">
+            <li>Provider: {analysisMeta.provider || 'local-heuristics'}</li>
+            <li>Model: {analysisMeta.model || 'rule-engine-v2'}</li>
+            {analysisMeta.stabilityMode ? <li>Stability mode: {analysisMeta.stabilityMode}</li> : null}
+            {analysisMeta.scoreWeights ? (
+              <li>
+                Score blend: Local {Math.round((analysisMeta.scoreWeights.local || 0) * 100)}% + AI{' '}
+                {Math.round((analysisMeta.scoreWeights.ai || 0) * 100)}%
+              </li>
+            ) : null}
+            <li>Files analyzed: {analysisMeta.filesAnalyzed ?? 0}</li>
+            <li>Estimated LOC: {analysisMeta.estimatedLoc ?? 0}</li>
+            {analysisMeta.fallbackUsed ? (
+              <li>Fallback mode active: {analysisMeta.fallbackReason || 'Provider unavailable'}</li>
+            ) : null}
+          </ul>
+        </section>
+      </div>
+
+      <div className="split-grid">
+        <section className="panel">
+          <h2>Complexity Heatmap</h2>
+          <Heatmap data={data.heatmap} />
+        </section>
+
+        <section className="panel">
+          <h2>Top Issues</h2>
+          <IssueList issues={data.topIssues} />
+        </section>
+      </div>
+
+      <div className="split-grid">
+        <section className="panel">
+          <h2>Priority Fixes</h2>
+          <div className="fixes-list">
+            {(data.priorityFixes || []).map((fix) => (
+              <article className="fix-item" key={`${fix.file}:${fix.suggestion}`}>
+                <header>
+                  <h3>{fix.suggestion}</h3>
+                  <span className="mono">{fix.file}</span>
+                </header>
+                <p className="muted">{fix.rationale || 'Targeted quality improvement.'}</p>
+                <div className="badge-row">
+                  <span className={`tag tag-impact-${(fix.impact || 'Medium').toLowerCase()}`}>
+                    {fix.impact || 'Medium'} impact
+                  </span>
+                  <span className={`tag tag-effort-${(fix.effort || 'Medium').toLowerCase()}`}>
+                    {fix.effort || 'Medium'} effort
+                  </span>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="panel">
+          <h2>Quick Wins & Strengths</h2>
+          <h3>Quick Wins</h3>
+          <ul className="simple-list">
+            {(data.quickWins || []).map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+          <h3 className="subhead">Current Strengths</h3>
+          <ul className="simple-list">
+            {(data.strengths || []).map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </section>
+      </div>
+
+      <section className="panel">
+        <h2>Next Milestones</h2>
+        <ul className="milestone-list">
+          {(data.nextMilestones || []).map((step) => (
+            <li key={step}>{step}</li>
+          ))}
+        </ul>
+      </section>
+    </div>
+  );
+}
+
+function scoreTone(score) {
+  if (score >= 82) return 'tone-good';
+  if (score >= 65) return 'tone-mid';
+  return 'tone-risk';
 }

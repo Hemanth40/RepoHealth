@@ -1,160 +1,133 @@
-# 🩺 AI RepoHealth
+# RepoSentinelX 2.0
 
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Next.js](https://img.shields.io/badge/Next.js-14.0-black)
-![Groq](https://img.shields.io/badge/AI-Groq-orange)
-![Status](https://img.shields.io/badge/Status-Active-success)
+RepoSentinelX 2.0 is a modern GitHub repository health analyzer built with free resources.
+It combines:
 
-> **"Check your code's vital signs in 30 seconds."**
+- GitHub API repository sampling
+- Deterministic local quality heuristics (always available)
+- Optional AI enhancement via Gemini free tier and/or Groq free tier
 
-**AI RepoHealth** is a modern, AI-powered web application that provides instant, actionable health reports for GitHub repositories. By leveraging the speed of Groq AI and the flexibility of Next.js, it analyzes code complexity, identifies critical bugs, and suggests priority fixes—all wrapped in a futuristic, glassmorphism UI.
+## Why this is v2
 
----
+Compared to the earlier v1 build, v2 adds:
 
-## ✨ Key Features
+- New brand identity: **RepoSentinelX 2.0**
+- Stronger backend pipeline with structured snapshot + report contract
+- AI hybrid + fallback modes:
+  - `hybrid`: Gemini + Groq in parallel with consensus merge
+  - `auto`: Gemini -> Groq -> local heuristics fallback
+- Expanded report sections:
+  - category scores
+  - risk posture
+  - file complexity heatmap
+  - priority fixes
+  - quick wins and milestones
+- New professional, responsive UI with improved information hierarchy
 
-- **🚀 Instant Analysis**: Fetches and analyzes GitHub repositories in seconds.
-- **🧠 Advanced AI Engine**: Powered by **Groq (Llama-3.3-70b)** for deep code understanding.
-- **🎨 Modern 2026 UI**:
-    - **Glassmorphism Design**: Sleek, translucent panels and vibrant gradients.
-    - **Cyber Grid Background**: Dynamic, animated 3D grid effect.
-    - **Micro-interactions**: Smooth hover states and transitions.
-- **📊 Interactive Dashboard**:
-    - **Health Score**: Overall code quality rating (0-100).
-    - **Complexity Heatmap**: Interactive visualizer for file complexity.
-    - **Critical Issues**: Prioritized list of bugs and anti-patterns.
-    - **Priority Fixes**: AI-suggested refactors with effort/impact estimation.
-    - **Quick Wins**: Low-effort tasks to immediately improve code quality.
+## Tech Stack
 
----
+- Next.js (App Router)
+- React
+- Octokit (GitHub API)
+- Groq SDK (optional provider)
+- Native fetch to Gemini API (optional provider)
 
-## 🛠️ Technology Stack
+## Free Resource Model
 
-- **Frontend**: [Next.js](https://nextjs.org/) (App Router), React 19
-- **Styling**: Vanilla CSS (Variables, Keyframes, Glassmorphism)
-- **AI Backend**: [Groq SDK](https://wow.groq.com/) (Llama 3.3 70B Versatile)
-- **Data Fetching**: [Octokit](https://github.com/octokit/octokit.js) (GitHub API)
-- **Environment**: Node.js
+The project is designed to run fully with free options:
 
----
+- GitHub public API (token optional but recommended for better limits)
+- Gemini free API key (optional)
+- Groq free API key (optional)
+- Local heuristic analyzer works even with zero AI credits
 
-## 🚀 Getting Started
+## Environment Variables
 
-Follow these steps to set up the project locally.
+Create `.env.local`:
 
-### Prerequisites
+```bash
+GITHUB_TOKEN=your_github_token_optional
 
-- Node.js 18+ installed.
-- A [Groq API Key](https://console.groq.com/).
-- A [GitHub Personal Access Token](https://github.com/settings/tokens) (optional, but recommended for higher rate limits).
+# AI provider config
+AI_PROVIDER=hybrid
+SCORE_BASE_WEIGHT=0.8
 
-### Installation
+# Gemini (optional)
+GEMINI_API_KEY=your_gemini_api_key
+GEMINI_MODEL=gemini-3-flash-preview
 
-1.  **Clone the repository:**
-    ```bash
-    git clone https://github.com/your-username/repo-health.git
-    cd repo-health
-    ```
-
-2.  **Install dependencies:**
-    ```bash
-    npm install
-    ```
-
-3.  **Configure Environment Variables:**
-    Create a `.env.local` file in the root directory:
-    ```bash
-    GROQ_API_KEY=your_groq_api_key_here
-    GITHUB_TOKEN=your_github_token_here
-    NEXT_PUBLIC_APP_URL=http://localhost:3000
-    ```
-
-4.  **Run the development server:**
-    ```bash
-    npm run dev
-    ```
-
-5.  **Open the app:**
-    Visit [http://localhost:3000](http://localhost:3000) in your browser.
-
----
-
-## 📂 Project Structure
-
-```
-├── src/
-│   ├── app/
-│   │   ├── api/analyze/    # API Route for GitHub fetching & AI Analysis
-│   │   ├── globals.css     # Global styles, variables, and animations
-│   │   ├── layout.js       # Root layout
-│   │   └── page.js         # Main Landing Page (Hero + Logic)
-│   ├── components/
-│   │   ├── Dashboard.js    # Main Results Container (Glass Panel)
-│   │   ├── Heatmap.js      # Interactive Complexity Visualizer
-│   │   └── IssueList.js    # Issues & Fixes Display
-│   └── lib/
-│       ├── github.js       # GitHub API integration (Octokit)
-│       └── groq.js         # Groq AI prompt engineering & client
-├── .env.local              # Environment secrets (Git-ignored)
-├── package.json            # Dependencies & Scripts
-└── README.md               # Project Documentation
+# Groq (optional)
+GROQ_API_KEY=your_groq_api_key
+GROQ_MODEL=llama-3.3-70b-versatile
 ```
 
----
+`AI_PROVIDER` supported values:
 
-## 🛡️ API Reference
+- `hybrid`: run Gemini + Groq together and merge both outputs
+- `auto`: Gemini first, then Groq, then local fallback
+- `gemini`
+- `groq`
+
+`SCORE_BASE_WEIGHT` (optional): controls score stability by anchoring AI output to deterministic local analysis.
+
+- Range: `0.5` to `0.95`
+- Higher value = more stable score (recommended `0.8`)
+
+## Getting Started
+
+```bash
+npm install
+npm run dev
+```
+
+Open `http://localhost:3000`.
+
+Use either:
+
+- Full GitHub URL (`https://github.com/vercel/next.js`)
+- Short format (`vercel/next.js`)
+
+## API
 
 ### `POST /api/analyze`
 
-Analyzes a public GitHub repository.
+Request:
 
-**Request Body:**
 ```json
 {
-  "repoUrl": "https://github.com/username/repository"
+  "repoUrl": "vercel/next.js"
 }
 ```
 
-**Response:**
-```json
-{
-  "overallScore": 85,
-  "summary": "Solid codebase with...",
-  "heatmap": [...],
-  "topIssues": [...],
-  "priorityFixes": [...]
-}
+Response includes:
+
+- `overallScore`, `grade`, `confidence`
+- `categories` (maintainability/reliability/security/documentation/architecture)
+- `risk` object
+- `heatmap`, `topIssues`, `priorityFixes`, `quickWins`, `nextMilestones`
+- `analysisMeta` provider/runtime details
+
+## Project Structure
+
+```text
+src/
+  app/
+    api/analyze/route.js
+    globals.css
+    layout.js
+    page.js
+  components/
+    Dashboard.js
+    Heatmap.js
+    IssueList.js
+  lib/
+    aiEnhancer.js
+    github.js
+    localAnalyzer.js
+    reportBuilder.js
 ```
 
----
+## Notes
 
-## 🔮 Roadmap
-
-- [ ] Support for private repositories (OAuth).
-- [ ] Export reports to PDF/Markdown.
-- [ ] Historical health tracking (Chart.js integration).
-- [ ] VS Code Extension.
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome! Please fork the repository and submit a pull request for any features or bug fixes.
-
-1.  Fork the Project
-2.  Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3.  Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4.  Push to the Branch (`git push origin feature/AmazingFeature`)
-5.  Open a Pull Request
-
----
-
-## 📄 License
-
-Distributed under the MIT License. See `LICENSE` for more information.
-
----
-
-<p align="center">
-  Built with ❤️ by <b>RepoHealth Team</b>
-</p>
+- If AI keys are missing or rate-limited, RepoSentinelX still returns a complete local report.
+- For large repositories, sampling is intentionally bounded to keep response time stable.
